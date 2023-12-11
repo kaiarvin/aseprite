@@ -11,6 +11,7 @@
 
 #include "app/doc_exporter.h"
 
+#include "app/app.h"
 #include "app/cmd/set_pixel_format.h"
 #include "app/console.h"
 #include "app/context.h"
@@ -1184,9 +1185,18 @@ Doc* DocExporter::createEmptyTexture(const Samples& samples,
   int maxColors = 256;
   gfx::ColorSpaceRef colorSpace;
   color_t transparentColor = 0;
+
+  // We generate a palette for file formats that support a color
+  // palette inside, or if the UI/preview is available/required.
+  //
+  // As a side note, here we cannot use a possible
+  // ctx->isUIAvailable() (instead of App::instance()->isGui())
+  // because when the sprite sheet is generated from the UI, a
+  // temporal non-UI context is created in a background thread.
+  const bool paletteRequiredByUIPreview = App::instance()->isGui();
   const bool textureSupportsPalette =
-    (m_textureFilename.empty() || // This is the preview and we create the palette anyway
-    format_supports_palette(m_textureFilename));
+    format_supports_palette(m_textureFilename) ||
+    paletteRequiredByUIPreview;
 
   for (const auto& sample : samples) {
     if (token.canceled())
